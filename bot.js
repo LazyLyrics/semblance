@@ -1,3 +1,5 @@
+const fs = require("node:fs")
+const path = require("node:path")
 const discord = require('discord.js')
 const supabasejs =  require('@supabase/supabase-js')
 require('dotenv').config()
@@ -16,6 +18,7 @@ client.once("ready", async function() {
   const guilds = Array.from((await client.guilds.fetch()).values())
   // Upsert each to supabase
   await upsertGuilds(guilds)
+  logger.debug("Completed guild membership check.")
   client.user.setActivity('Counting your messages.')
   logger.info(`Logged in as ${client.user.tag}.`)
   logger.info(`Ready!`)
@@ -29,6 +32,9 @@ client.on("guildCreate", guild => {
 
 // Message handling //
 client.on("messageCreate", async function(msg) {
+
+  if (msg.author.id === client.user.id) return;
+
   // Start processing time count
   const start = performance.now()
 
@@ -54,6 +60,35 @@ client.on("messageCreate", async function(msg) {
   // Log processing time
   const duration = performance.now() - start
   logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
+})
+
+// Commands
+
+client.commands = new discord.Collection();
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+
+for (const file of commandFiles) {
+  const filePath = path.join(commandsPath, file);
+  const command = require(filePath);
+  client.commands.set(command.data.name, command);
+  logger.debug(`Added ${command.data.name} command to client.commands`)
+}
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+
+  if(!command) return;
+
+  logger.debug(`${command.data.name} sent by ${interaction.user.username} (${interaction.user.id})`)
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    logger.error(error);
+    await interaction.reply({ content: 'There was an error while executing this command', ephemeral: true })
+  }
 })
 
 client.login(ENV.BOT_TOKEN)
