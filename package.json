@@ -1,0 +1,30 @@
+{
+  "name": "semblance",
+  "version": "0.1.0-alpha",
+  "description": "A lightweight discord levelling and interaction management bot",
+  "type": "module",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LazyLyrics/semblance.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "leaderboard"
+  ],
+  "author": "lazylyrics",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LazyLyrics/semblance/issues"
+  },
+  "homepage": "https://github.com/LazyLyrics/semblance#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^1.35.3",
+    "discord.js": "^13.7.0",
+    "dotenv": "^16.0.1"
+  }
+}
