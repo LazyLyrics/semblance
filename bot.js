@@ -1,20 +1,21 @@
-import { createClient } from "@supabase/supabase-js";
-import { Client, Intents } from "discord.js"
-import "dotenv/config"
+const discord = require('discord.js')
+const supabasejs =  require('@supabase/supabase-js')
+require('dotenv').config()
+const logger = require("./logging")
 
 const ENV = process.env
 
-const supabase = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
-const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]})
+const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
+const client = new discord.Client({intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES]})
 
 async function upsertUser(user_id, user_name) {
   const { data, error } = await supabase.from('Users').upsert({id: user_id, name: user_name})
   if (error) {
-    console.log("Supabase error: " + error)
+    logger.error("Supabase error: " + error)
   } else if (data.length > 0) {
-    console.log(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
+    logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
   } else {
-    console.log("No supabase error reported but no data returned.")
+    logger.warn("No supabase error reported but no data returned.")
   }
 }
 
@@ -33,11 +34,11 @@ async function insertMember(msg, guild_id) {
     }
     )
   if (error) {
-    console.log("Supabase error : " + error)
+    logger.error("Supabase error : " + error)
   } else if (data.length > 0) {
-    console.log(`id: ${data[0].user_id} inserted as member in guild ${data[0].guild_id}.`)
+    logger.debug(`id: ${data[0].user_id} inserted as member in guild ${data[0].guild_id}.`)
   } else {
-    console.log("No supabase error reported but no data returned.")
+    logger.warn("No supabase error reported but no data returned.")
   }
 }
 
@@ -56,17 +57,16 @@ async function updateMember(msg, member_id, pdata) {
   .match({id: member_id})
 
   if (error) {
-    console.log("Supabase error : " + error)
+    logger.error("Supabase error : " + error)
   } else if (data.length > 0) {
-    console.log(`id: ${data[0].user_id} updated: `)
-    console.log(data[0])
+    logger.debug(`user: ${data[0].user_id} membership in guild: ${data[0].guild_id} updated. `, data[0])
   } else {
-    console.log("No supabase error reported but no data returned.")
+    logger.warn("No supabase error reported but no data returned.")
   }
 }
 
 client.once("ready", async function() {
-  console.log("Checking guild membership...")
+  logger.debug("Checking guild membership...")
 
   // Get list of guilds
   const guilds = Array.from((await client.guilds.fetch()).values())
@@ -75,31 +75,32 @@ client.once("ready", async function() {
     const guild = guilds[i];
     const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
     if (error) {
-      console.log("Supabase error: " + error)
+      logger.error("Supabase error: " + error)
     } else if (data.length > 0) {
-      console.log(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
+      logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
     } else {
-      console.log("No supabase error reported but no data returned.")
+      logger.error("No supabase error reported but no data returned.")
     }
   }
-  console.log(`Logged in as ${client.user.tag}.`)
-  console.log(`Ready!`)
+  client.user.setActivity('Counting your messages.')
+  logger.info(`Logged in as ${client.user.tag}.`)
+  logger.info(`Ready!`)
 })
 
 // Events
 client.on("guildCreate", guild => {
-  console.log(guild)
+  logger.debug(`${guild}`)
 })
 
 
 // ------------------- MESSAGE HANDLING ------------------------ //
 client.on("messageCreate", async function(msg) {
-  console.log("------ MESSAGE -------------")
   // Start processing time count
   const start = performance.now()
 
   // Log message info
   console.log(msg.author.username + ": " + msg.content)
+  logger.debug(`MESSAGE: ${msg.author.username}: ${msg.content}`)
 
   // upsert user to db
   const user = msg.author
@@ -109,7 +110,7 @@ client.on("messageCreate", async function(msg) {
   // Look for member entry
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user.id, guild_id: guild_id})
   if (error) {
-    console.log(`Supabase error: ${error}`)
+   logger.error(`Supabase error: ${error}`)
   } else if (data.length > 0) {
     await updateMember(msg, data[0].id, data[0])
   } else if (data.length === 0) {
@@ -118,8 +119,7 @@ client.on("messageCreate", async function(msg) {
 
   // Log processing time
   const duration = performance.now() - start
-  console.log(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
-  console.log("--------------------------------")
+  logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
 })
 // ----------------------------------------------------------- //
 
