@@ -3,9 +3,9 @@ const { combine, splat, timestamp, printf } = format
 require('dotenv').config()
 const ENV = process.env
 
-const defaultFormat = printf(({ level, msg, timestamp, ...metadata}) => {
-  let log = `${timestamp} [${level}]: ${msg}`
-  if (metadata) {
+const defaultFormat = printf(({ level, message, timestamp, ...metadata}) => {
+  let log = `${timestamp} [${level}]: ${message}`
+  if (metadata.length > 0) {
     log += JSON.stringify(metadata)
   }
   return log
@@ -19,11 +19,8 @@ const logger = createLogger({
     defaultFormat
     ),
   transports: [
-    new transports.Console({
-      level: 'warn'
-    }),
     new transports.File({
-      filename: "debug.log",
+      filename: "logs/debug.log",
       level: 'debug'
     })
   ],
@@ -32,7 +29,6 @@ const logger = createLogger({
 
 if (ENV.NODE_ENV !== 'production') {
   logger.add(new transports.Console({
-    format: format.simple(),
     level: "debug"
   }));
 }
