@@ -1,6 +1,6 @@
 {
   "name": "semblance",
-  "version": "0.1.1-alpha",
+  "version": "0.1.0-alpha",
   "description": "A lightweight discord levelling and interaction management bot",
   "type": "module",
   "main": "bot.js",
