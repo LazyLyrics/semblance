@@ -83,9 +83,32 @@ async function upsertGuilds(guilds) {
   }
 }
 
+async function upsertGuild(guild) {
+  const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
+    if (error) {
+      logger.error("Supabase error: " + error.message)
+    } else if (data.length > 0) {
+      logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
+    } else {
+      logger.warn("No supabase error reported but no data returned.")
+    }
+}
+
+async function getMember(user_id, guild_id) {
+  const { data, error } = await supabase.from('Members').select("*").match({user_id: user_id, guild_id: guild_id}).maybeSingle()
+  if (error) {
+    logger.error(error.message)
+  }
+  logger.debug(`Retrieved member match from db, data: ${JSON.stringify(data)}`)
+  return data
+}
+
 module.exports = {
   updateMember: updateMember,
   upsertUser: upsertUser,
   insertMember: insertMember,
   upsertGuilds: upsertGuilds,
+  upsertGuild: upsertGuild,
+  getMember: getMember,
+  supabase: supabase,
 }

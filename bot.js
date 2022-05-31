@@ -3,12 +3,11 @@ const path = require("node:path")
 const discord = require('discord.js')
 const supabasejs =  require('@supabase/supabase-js')
 require('dotenv').config()
-const logger = require("./logging")
-const { updateMember, upsertUser, insertMember, upsertGuilds } = require("./db")
+const logger = require("./utils/logging")
+const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, supabase } = require("./utils/db")
 
 const ENV = process.env
 
-const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
 const client = new discord.Client({intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES]})
 
 client.once("ready", async function() {
@@ -25,8 +24,8 @@ client.once("ready", async function() {
 })
 
 // ----------------------------- EVENTS -----------------------//
-client.on("guildCreate", guild => {
-  logger.debug(`${guild}`)
+client.on("guildCreate", async guild => {
+  await upsertGuild(guild)
 })
 
 

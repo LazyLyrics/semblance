@@ -12,7 +12,7 @@ const GUILD_ID = ENV.DEV_GUILD_ID
 const BOT_TOKEN = ENV.BOT_TOKEN
 
 const commands = []
-const commandsPath = path.join(__dirname, "commands");
+const commandsPath = path.join(__dirname, "../commands");
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"))
 
 for (const file of commandFiles) {
