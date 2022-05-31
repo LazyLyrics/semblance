@@ -103,6 +103,14 @@ async function getMember(user_id, guild_id) {
   return data
 }
 
+async function reset(guild_id) {
+  const {data, error} = await supabase.from('Members').update({xp: 0, messages: 0, characters: 0, level: 0, monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
+  if (error) {
+    logger.error(error.message)
+  }
+  return
+}
+
 module.exports = {
   updateMember: updateMember,
   upsertUser: upsertUser,
@@ -110,5 +118,6 @@ module.exports = {
   upsertGuilds: upsertGuilds,
   upsertGuild: upsertGuild,
   getMember: getMember,
+  reset: reset,
   supabase: supabase,
 }
