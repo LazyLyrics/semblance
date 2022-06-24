@@ -22,21 +22,23 @@ async function memberInfoEmbed(discord_user, member) {
 }
 
 async function guildInfoEmbed(guild) {
+  const icon = guild.icon_url({dynamic: true})
   const embed = new MessageEmbed()
   .setColor('BLUE')
   .setTitle(guild.name)
-  // .setDescription(String(compliment))
   .addFields(
-    { name: 'Total Messages', value: String(member.messages)},
-    { name: 'Messages this month', value: String(member.monthly_messages)},
-    { name: 'Total XP Generated', value: String(member.xp)},
-    { name: 'XP generated this month', value: String(member.monthly_xp)}
+    { name: 'Total Messages', value: String("Coming Soon")},
+    { name: 'Messages this month', value: String("Coming Soon")},
+    { name: 'Total XP Generated', value: String("Coming Soon")},
+    { name: 'XP generated this month', value: String("Coming Soon")}
   )
   .setTimestamp()
+  .setThumbnail(thumbnail)
 
   return embed
 }
 
 module.exports = {
-  memberInfoEmbed: memberInfoEmbed
+  memberInfoEmbed: memberInfoEmbed,
+  guildInfoEmbed: guildInfoEmbed
 }

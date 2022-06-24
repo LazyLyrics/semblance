@@ -111,6 +111,44 @@ async function reset(guild_id) {
   return
 }
 
+async function reset_monthly(guild_id) {
+  const {data, error} = await supabase.from('Members').update({monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
+  if (error) {
+    logger.error(error.message)
+  }
+  return
+}
+
+async function getLeaderboard(guild_id, reset) {
+  const { data, error } = await supabase.from('Members').select("*").order('xp').match({guild_id: guild_id});
+  if (error) {
+    logger.error("Supabase error: " + error.message)
+  } else if (data.length == 0) {
+    logger.warn("Supabase leaderboard query returned no data. (This may not be an error if there are no members registered with this guild.)")
+    return null
+  } else {
+    if (reset) {
+      await reset(guild_id)
+    }
+    return data
+  }
+}
+
+async function getMonthlyLeaderboard(guild_id, reset) {
+  const { data, error } = await supabase.from('Members').select("*").order('monthly_xp').match({guild_id: guild_id});
+  if (error) {
+    logger.error("Supabase error: " + error.message)
+  } else if (data.length == 0) {
+    logger.warn("Supabase monthly leaderboard query returned no data. (This may not be an error if there are no members registered with this guild.)")
+    return null
+  } else {
+    if (reset) {
+      await reset_monthly(guild_id)
+    }
+    return data
+  }
+}
+
 module.exports = {
   updateMember: updateMember,
   upsertUser: upsertUser,
@@ -119,5 +157,8 @@ module.exports = {
   upsertGuild: upsertGuild,
   getMember: getMember,
   reset: reset,
+  reset_monthly: reset,
+  getLeaderboard: getLeaderboard,
+  getMonthlyLeaderboard: getMonthlyLeaderboard,
   supabase: supabase,
 }
