@@ -120,7 +120,7 @@ async function reset_monthly(guild_id) {
 }
 
 async function getLeaderboard(guild_id, reset) {
-  const { data, error } = await supabase.from('Members').select("*").order('xp').match({guild_id: guild_id});
+  const { data, error } = await supabase.from('Members').select("*").order('xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
     logger.error("Supabase error: " + error.message)
   } else if (data.length == 0) {
@@ -135,7 +135,7 @@ async function getLeaderboard(guild_id, reset) {
 }
 
 async function getMonthlyLeaderboard(guild_id, reset) {
-  const { data, error } = await supabase.from('Members').select("*").order('monthly_xp').match({guild_id: guild_id});
+  const { data, error } = await supabase.from('Members').select("*").order('monthly_xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
     logger.error("Supabase error: " + error.message)
   } else if (data.length == 0) {
