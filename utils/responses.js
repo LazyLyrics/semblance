@@ -1,5 +1,7 @@
 const { MessageEmbed } = require('discord.js');
 const { getCompliment } = require('./misc.js')
+const { supabase } = require('./db');
+const logger = require('./logging.js');
 
 async function memberInfoEmbed(discord_user, member) {
   const thumbnail = discord_user.avatarURL({dynamic: true})
@@ -22,7 +24,7 @@ async function memberInfoEmbed(discord_user, member) {
 }
 
 async function guildInfoEmbed(guild) {
-  const icon = guild.icon_url({dynamic: true})
+  const icon = guild.iconURL({dynamic: true})
   const embed = new MessageEmbed()
   .setColor('BLUE')
   .setTitle(guild.name)
@@ -33,12 +35,40 @@ async function guildInfoEmbed(guild) {
     { name: 'XP generated this month', value: String("Coming Soon")}
   )
   .setTimestamp()
-  .setThumbnail(thumbnail)
+  .setThumbnail(icon)
+
+  return embed
+}
+
+async function leaderboardEmbed(title, leaderboard, guild) {
+  const icon = guild.iconURL({dynamic: true})
+  let fields = []
+  for (let i = 0; i < leaderboard.length; i++) {
+    const member = leaderboard[i];
+    logger.debug("Retrieving username for: " + JSON.stringify(member))
+    const { data, error } = await supabase.from('Users').select("name").match({id: member.user_id}).single()
+    logger.debug(JSON.stringify(data))
+    const field = {name: String(i + 1), value: String(data.name)}
+    logger.debug("Created leaderboard field: " + JSON.stringify(field))
+    fields.push(
+      field
+    )
+  }
+
+  const embed = new MessageEmbed()
+  .setColor('BLUE')
+  .setTitle(title)
+  .addFields(
+    fields
+  )
+  .setTimestamp()
+  .setThumbnail(icon)
 
   return embed
 }
 
 module.exports = {
   memberInfoEmbed: memberInfoEmbed,
-  guildInfoEmbed: guildInfoEmbed
+  guildInfoEmbed: guildInfoEmbed,
+  leaderboardEmbed: leaderboardEmbed
 }

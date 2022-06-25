@@ -29,7 +29,7 @@ async function insertMember(msg, guild_id) {
       xp: xp,
       messages: 1,
       characters: msg.content.length,
-      monthly_xp: 0,
+      monthly_xp: xp,
       monthly_messages: 1,
       monthly_characters: msg.content.length
     }
@@ -73,6 +73,7 @@ async function upsertGuilds(guilds) {
   for (let i = 0; i < guilds.length; i++) {
     const guild = guilds[i];
     const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
+    logger.debug(typeof guild.id)
     if (error) {
       logger.error("Supabase error: " + error.message)
     } else if (data.length > 0) {
@@ -119,7 +120,7 @@ async function reset_monthly(guild_id) {
   return
 }
 
-async function getLeaderboard(guild_id, reset) {
+async function getLeaderboard(guild_id) {
   const { data, error } = await supabase.from('Members').select("*").order('xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
     logger.error("Supabase error: " + error.message)
@@ -127,14 +128,11 @@ async function getLeaderboard(guild_id, reset) {
     logger.warn("Supabase leaderboard query returned no data. (This may not be an error if there are no members registered with this guild.)")
     return null
   } else {
-    if (reset) {
-      await reset(guild_id)
-    }
     return data
   }
 }
 
-async function getMonthlyLeaderboard(guild_id, reset) {
+async function getMonthlyLeaderboard(guild_id) {
   const { data, error } = await supabase.from('Members').select("*").order('monthly_xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
     logger.error("Supabase error: " + error.message)
@@ -142,9 +140,6 @@ async function getMonthlyLeaderboard(guild_id, reset) {
     logger.warn("Supabase monthly leaderboard query returned no data. (This may not be an error if there are no members registered with this guild.)")
     return null
   } else {
-    if (reset) {
-      await reset_monthly(guild_id)
-    }
     return data
   }
 }

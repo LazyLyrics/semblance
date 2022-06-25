@@ -18,7 +18,6 @@ client.once("ready", async function() {
   // Upsert each to supabase
   await upsertGuilds(guilds)
   logger.debug("Completed guild membership check.")
-  client.user.setActivity('Counting your messages.')
   logger.info(`Logged in as ${client.user.tag}.`)
   logger.info(`Ready!`)
 })

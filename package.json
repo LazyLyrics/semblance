@@ -5,6 +5,7 @@
   "main": "bot.js",
   "scripts": {
     "start": "node .",
+    "dev": "nodemon --watch bot.js --watch commands --watch utils",
     "commands": "node utils/deploy-commands.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -33,5 +34,8 @@
     "discord.js": "^13.7.0",
     "dotenv": "^16.0.1",
     "winston": "^3.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.18"
   }
 }
