@@ -42,7 +42,7 @@ client.on("messageCreate", async function(msg) {
   // upsert user to db
   const user = msg.author
   const guild_id = msg.guildId
-  await upsertUser(user.id, user.username)
+  await upsertUser(user.id, user.username, user.avatarURL())
 
   // Look for member entry
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user.id, guild_id: guild_id})

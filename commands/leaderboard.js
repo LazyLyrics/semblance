@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders')
-const { leaderboardEmbed } = require("../utils/responses")
+const { leaderboardEmbeds } = require("../utils/responses")
 const db = require("../utils/db.js")
 const logger = require("../utils/logging")
 
@@ -10,13 +10,9 @@ module.exports = {
   async execute(interaction) {
     const guild = interaction.guild
     const data = await db.getLeaderboard(guild.id)
-    logger.debug("Leaderboard data: " + JSON.stringify(data))
-    const response = await leaderboardEmbed("Leaderboard", data, guild)
-    logger.debug(`Created response embed - ${JSON.stringify(response)}`)
+    const responses = await leaderboardEmbeds(data, guild)
     await interaction.reply({
-      embeds: [
-        response
-      ]
+      embeds: responses
     })
   }
 }

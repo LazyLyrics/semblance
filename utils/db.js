@@ -7,8 +7,8 @@ const ENV = process.env
 
 const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
 
-async function upsertUser(user_id, user_name) {
-  const { data, error } = await supabase.from('Users').upsert({id: user_id, name: user_name})
+async function upsertUser(user_id, user_name, avatar_url) {
+  const { data, error } = await supabase.from('Users').upsert({id: user_id, name: user_name, avatar_url: avatar_url})
   if (error) {
     logger.error("Supabase error whilst upserting user: " + error.message)
   } else if (data.length > 0) {

@@ -25,6 +25,7 @@ async function memberInfoEmbed(discord_user, member) {
 
 async function guildInfoEmbed(guild) {
   const icon = guild.iconURL({dynamic: true})
+  logger.debug(`Retreived URL for ${guild.name} thumbnail: ${guild.iconURL()}`)
   const embed = new MessageEmbed()
   .setColor('BLUE')
   .setTitle(guild.name)
@@ -40,35 +41,38 @@ async function guildInfoEmbed(guild) {
   return embed
 }
 
-async function leaderboardEmbed(title, leaderboard, guild) {
-  const icon = guild.iconURL({dynamic: true})
-  let fields = []
+async function leaderboardEmbeds(leaderboard, guild, type) {
+  let embeds = [];
+
   for (let i = 0; i < leaderboard.length; i++) {
-    const member = leaderboard[i];
-    logger.debug("Retrieving username for: " + JSON.stringify(member))
-    const { data, error } = await supabase.from('Users').select("name").match({id: member.user_id}).single()
-    logger.debug(JSON.stringify(data))
-    const field = {name: String(i + 1), value: String(data.name)}
-    logger.debug("Created leaderboard field: " + JSON.stringify(field))
-    fields.push(
-      field
+    let member = leaderboard[i]
+    let xp;
+    let messages;
+
+    if (type == "monthly") {
+      xp = `${member.monthly_xp}xp`
+      messages = `${member.monthly_messages} messages`
+    } else {
+      xp = `${member.xp}xp`
+      messages = `${member.messages} messages`
+    }
+
+    logger.debug("Retrieving username and avatar for: " + JSON.stringify(member, null, 2))
+    const { data, error } = await supabase.from('Users').select("name, avatar_url").match({id: member.user_id}).single()
+
+    const embed = new MessageEmbed()
+    .setColor('BLUE')
+    .addField(`${String(i + 1)}. ${String(data.name)}`, `${xp} | ${messages}`)
+    .setThumbnail(data.avatar_url)
+    embeds.push(
+      embed
     )
   }
-
-  const embed = new MessageEmbed()
-  .setColor('BLUE')
-  .setTitle(title)
-  .addFields(
-    fields
-  )
-  .setTimestamp()
-  .setThumbnail(icon)
-
-  return embed
+  return embeds
 }
 
 module.exports = {
   memberInfoEmbed: memberInfoEmbed,
   guildInfoEmbed: guildInfoEmbed,
-  leaderboardEmbed: leaderboardEmbed
+  leaderboardEmbeds: leaderboardEmbeds
 }
