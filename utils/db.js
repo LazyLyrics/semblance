@@ -152,7 +152,7 @@ module.exports = {
   upsertGuild: upsertGuild,
   getMember: getMember,
   reset: reset,
-  reset_monthly: reset,
+  reset_monthly: reset_monthly,
   getLeaderboard: getLeaderboard,
   getMonthlyLeaderboard: getMonthlyLeaderboard,
   supabase: supabase,
