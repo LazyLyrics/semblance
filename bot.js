@@ -5,7 +5,7 @@ const supabasejs =  require('@supabase/supabase-js')
 require('dotenv').config()
 const logger = require("./utils/logging")
 const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, supabase } = require("./utils/db")
-const { guildInfoFormat, userInfoFormat } = require("/utils/misc")
+const { guildInfoFormat, userInfoFormat } = require("./utils/misc")
 
 const ENV = process.env
 

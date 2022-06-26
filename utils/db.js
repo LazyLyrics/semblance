@@ -10,7 +10,7 @@ const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
 
 async function upsertUser(user) {
   logger.debug(`Attempting to upsert user ${userInfoFormat(user)}`)
-  const { data, error } = await supabase.from('Users').upsert({id: user.id, name: user.name, avatar_url: user.avatarURL()})
+  const { data, error } = await supabase.from('Users').upsert({id: user.id, name: user.username, avatar_url: user.avatarURL()})
   if (error) {
     logger.error(`Couldn't upsert user ${userInfoFormat(user)} \n Supabase error: ${error.message}`)
   } else if (data.length > 0) {
