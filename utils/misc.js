@@ -11,6 +11,15 @@ async function getCompliment() {
   return capitalise(complimenter()) + '!'
   }
 
+async function guildInfoFormat(guild) {
+  return `[name: ${guild.name} id: ${guild.id}]`
+}
+async function userInfoFormat(user) {
+  return `[name: ${user.name} id:${user.id}]`
+}
+
 module.exports = {
-  getCompliment: getCompliment
+  getCompliment: getCompliment,
+  guildInfoFormat: guildInfoFormat,
+  userInfoFormat: userInfoFormat,
 }

@@ -5,25 +5,26 @@ const supabasejs =  require('@supabase/supabase-js')
 require('dotenv').config()
 const logger = require("./utils/logging")
 const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, supabase } = require("./utils/db")
+const { guildInfoFormat, userInfoFormat } = require("/utils/misc")
 
 const ENV = process.env
 
 const client = new discord.Client({intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES]})
 
 client.once("ready", async function() {
-  logger.debug("Checking guild membership...")
-
+  logger.info("Checking guild membership...")
   // Get list of guilds
   const guilds = Array.from((await client.guilds.fetch()).values())
   // Upsert each to supabase
   await upsertGuilds(guilds)
-  logger.debug("Completed guild membership check.")
+  logger.info("Completed guild membership check.")
   logger.info(`Logged in as ${client.user.tag}.`)
   logger.info(`Ready!`)
 })
 
 // ----------------------------- EVENTS -----------------------//
 client.on("guildCreate", async guild => {
+  logger.info(`New guild joined ${guildInfoFormat(guild)}. Adding to database.`)
   await upsertGuild(guild)
 })
 
@@ -37,12 +38,12 @@ client.on("messageCreate", async function(msg) {
   const start = performance.now()
 
   // Log message info
-  logger.debug(`MESSAGE: ${msg.author.username}: ${msg.content}`)
+  logger.debug(`MESSAGE: ${userInfoFormat(msg.author)}: ${msg.content}`)
 
   // upsert user to db
   const user = msg.author
   const guild_id = msg.guildId
-  await upsertUser(user.id, user.username, user.avatarURL())
+  await upsertUser(user)
 
   // Look for member entry
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user.id, guild_id: guild_id})
@@ -50,8 +51,10 @@ client.on("messageCreate", async function(msg) {
     logger.error(`Supabase error in member search: ${error.message}`)
   } else if (data.length > 0) {
     // Update member
+    logger.debug(`User ${userInfoFormat(user)} present in Member table, updating.`)
     await updateMember(msg, data[0].id, data[0])
   } else if (data.length === 0) {
+    logger.debug(`User ${userInfoFormat(user)} not present in Member table, inserting.`)
     await insertMember(msg, guild_id)
   }
 
@@ -64,6 +67,7 @@ client.on("messageCreate", async function(msg) {
 
 client.commands = new discord.Collection();
 const commandsPath = path.join(__dirname, 'commands');
+logger.debug(`Searching for command files in ${commandsPath}`)
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
@@ -78,14 +82,16 @@ client.on('interactionCreate', async interaction => {
 
   const command = client.commands.get(interaction.commandName);
 
-  if(!command) return;
+  if(!command) {
+    logger.warn(`Commmand ${interaction.commandName} not found in client.commands.`)
+  };
 
-  logger.debug(`${command.data.name} sent by ${interaction.user.username} (${interaction.user.id})`)
+  logger.debug(`${command.data.name} sent by ${userInfoFormat(interaction.user)} in guild ${guildInfoFormat(interaction.guild)}`)
   try {
     await command.execute(interaction);
   } catch (error) {
-    logger.error(error);
-    await interaction.reply({ content: 'There was an error while executing this command', ephemeral: true })
+    logger.error(`Error executing command {command.data.name} sent by ${userInfoFormat(interaction.user)} in guild ${guildInfoFormat(interaction.guild)}`);
+    await interaction.reply({ content: 'There was an error while executing this command. If this continues please contact the developers.', ephemeral: true })
   }
 })
 

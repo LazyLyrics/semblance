@@ -13,6 +13,7 @@ const BOT_TOKEN = ENV.BOT_TOKEN
 
 const commands = []
 const commandsPath = path.join(__dirname, "../commands");
+logger.debug(`Searching for commands in ${commandsPath}`)
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"))
 
 for (const file of commandFiles) {

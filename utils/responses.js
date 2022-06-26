@@ -25,7 +25,6 @@ async function memberInfoEmbed(discord_user, member) {
 
 async function guildInfoEmbed(guild) {
   const icon = guild.iconURL({dynamic: true})
-  logger.debug(`Retreived URL for ${guild.name} thumbnail: ${guild.iconURL()}`)
   const embed = new MessageEmbed()
   .setColor('BLUE')
   .setTitle(guild.name)
@@ -56,10 +55,7 @@ async function leaderboardEmbeds(leaderboard, guild, type) {
       xp = `${member.xp}xp`
       messages = `${member.messages} messages`
     }
-
-    logger.debug("Retrieving username and avatar for: " + JSON.stringify(member, null, 2))
     const { data, error } = await supabase.from('Users').select("name, avatar_url").match({id: member.user_id}).single()
-
     const embed = new MessageEmbed()
     .setColor('BLUE')
     .addField(`${String(i + 1)}. ${String(data.name)}`, `${xp} | ${messages}`)

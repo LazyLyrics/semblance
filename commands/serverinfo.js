@@ -13,7 +13,6 @@ module.exports = {
     const members = guild.memberCount
 
     const response = await guildInfoEmbed(guild)
-    logger.debug(`Created response embed - ${JSON.stringify(response)}`)
     await interaction.reply({
       embeds: [
         response
