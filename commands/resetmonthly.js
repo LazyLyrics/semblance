@@ -17,7 +17,7 @@ module.exports = {
       await interaction.followUp('Monthly leaderboard Cleared.')
     } else {
       logger.debug(`${userInfoFormat(interaction.member)} in guild ${guildInfoFormat(interaction.guild)} does not have ADMINISTRATOR permissions, aborting monthly leaderboard reset.`)
-      await interaction.reply("You do not have administrator permissions.")
+      await interaction.reply("You do not have Administrator Permissions.")
     }
   }
 }
