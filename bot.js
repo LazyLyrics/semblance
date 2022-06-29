@@ -1,7 +1,6 @@
 const fs = require("node:fs")
 const path = require("node:path")
 const discord = require('discord.js')
-const supabasejs =  require('@supabase/supabase-js')
 require('dotenv').config()
 const logger = require("./utils/logging")
 const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, supabase } = require("./utils/db")
@@ -90,7 +89,7 @@ client.on('interactionCreate', async interaction => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    logger.error(`Error executing command {command.data.name} sent by ${userInfoFormat(interaction.user)} in guild ${guildInfoFormat(interaction.guild)}`);
+    logger.error(`Error executing command ${command.data.name} sent by ${userInfoFormat(interaction.user)} in guild ${guildInfoFormat(interaction.guild)} \n Error: ${error.message}`);
     await interaction.reply({ content: 'There was an error while executing this command. If this continues please contact the developers.', ephemeral: true })
   }
 })
