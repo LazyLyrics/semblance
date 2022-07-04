@@ -12,14 +12,23 @@ async function getCompliment() {
   }
 
 function guildInfoFormat(guild) {
-  return `[name: ${guild.name} id: ${guild.id}]`
+  return `[_GUILD_ name: ${guild.name} id: ${guild.id}]`
 }
 function userInfoFormat(user) {
-  return `[name: ${user.username} id:${user.id}]`
+  if (user.username) {
+    return `[_USER_ name: ${user.username} id:${user.id}]`
+  } else {
+    return `[_MEMBER_ name: ${user.user.username} member_id:${user.id} user_id:${user.user.id}]`
+  }
+}
+
+function roleInfoFormat(role) {
+  return `[_ROLE_ name: ${role.name} id:${role.id}]`
 }
 
 module.exports = {
   getCompliment: getCompliment,
   guildInfoFormat: guildInfoFormat,
   userInfoFormat: userInfoFormat,
+  roleInfoFormat: roleInfoFormat
 }
