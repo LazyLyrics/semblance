@@ -30,13 +30,14 @@ module.exports = {
       await interaction.reply("You do not have administrator permissions.")
       return
     }
-    let spec = {
-      id: role.id,
-      level: level
-    }
     try {
       role_specs = await getRoleSpecs(guild.id)
-      role_specs.push(spec)
+      if (level in role_specs) {
+        role_specs[level].push(role.id)
+      } else {
+        role_specs[level] = [role.id]
+      }
+
     } catch (e) {
       logger.error(e.message)
       await interaction.reply("Error whilst retrieving roles. Please try again later.")
