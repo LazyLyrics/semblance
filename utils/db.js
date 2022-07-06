@@ -6,19 +6,88 @@ const { userInfoFormat, guildInfoFormat } = require('./misc')
 
 const ENV = process.env
 
+// Exception Handlers
+
+class SupabaseException {
+  constructor(error) {
+    this.error = error.message
+    this.prefix = 'Supabase reported an error: '
+    this.toString = function () {
+      return this.prefix + this.error
+    }
+  }
+}
+
+class SupabaseNullDataException {
+  constructor() {
+    this.message = 'No supabase error reported but no data returned.'
+    this.toString = () => {
+      return this.message
+    }
+  }
+}
+
+// SUPABASE CLIENT
 const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
 
+// USER MANAGEMENT
 async function upsertUser(user) {
   logger.debug(`Attempting to upsert user ${userInfoFormat(user)}`)
   const { data, error } = await supabase.from('Users').upsert({id: user.id, name: user.username, avatar_url: user.avatarURL()})
   if (error) {
-    logger.error(`Couldn't upsert user ${userInfoFormat(user)} \n Supabase error: ${error.message}`)
+    throw new SupabaseException(error)
   } else if (data.length > 0) {
-    logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
+    return data[0]
   } else {
-    logger.warn("No supabase error reported but no data returned.")
+    throw new SupabaseNullDataException()
   }
 }
+
+// GUILD MANAGEMENT
+
+async function upsertGuilds(guilds) {
+  logger.debug(`Attempting to upsert guilds to database.`)
+  for (let i = 0; i < guilds.length; i++) {
+    const guild = guilds[i];
+    logger.debug(`Upserting ${guildInfoFormat(guild)}`)
+    const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
+    if (error) {
+      throw new SupabaseException(error)
+    } else if (data.length > 0) {
+      return data[0]
+    } else {
+      throw new SupabaseNullDataException()
+    }
+  }
+}
+
+async function upsertGuild(guild) {
+  logger.debug(`Upserting ${guildInfoFormat(guild)} to database.`)
+  const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
+    if (error) {
+      throw new SupabaseException(error)
+    } else if (data.length > 0) {
+      return data[0]
+    } else {
+      throw new SupabaseNullDataException()
+    }
+}
+
+
+// MEMBER MANAGEMENT
+
+async function getMember(user_id, guild_id) {
+  logger.debug(`Searching for user with id ${user_id} in guild ${guild_id} in database.`)
+  const { data, error } = await supabase.from('Members').select("*").match({user_id: user_id, guild_id: guild_id}).maybeSingle()
+  if (error) {
+    throw new SupabaseException(error)
+  } else if (data.length > 0) {
+      return data
+  } else {
+    throw new SupabaseNullDataException()
+  }
+}
+
 
 async function insertMember(msg, guild_id) {
   logger.debug(`Attempting to create new member record for user ${userInfoFormat(msg.author)}`)
@@ -38,11 +107,11 @@ async function insertMember(msg, guild_id) {
     }
     )
   if (error) {
-    logger.error(`create new member record for user ${userInfoFormat(msg.author)} \n Supabase Error: ${error.message}`)
+    throw new SupabaseException(error)
   } else if (data.length > 0) {
-    logger.debug(`id: ${data[0].user_id} inserted as member in guild ${data[0].guild_id}.`)
+    return data
   } else {
-    logger.warn("No supabase error reported but no data returned.")
+    throw new SupabaseNullDataException()
   }
 }
 
@@ -65,82 +134,25 @@ async function updateMember(msg, member_id, pdata) {
   .match({id: member_id})
 
   if (error) {
-    logger.error(`Error updating member ${userInfoFormat(msg.author)} \n Supabase error: ${error.message}`)
+    throw new SupabaseException()
   } else if (data.length > 0) {
-    logger.debug(`user: ${data[0].user_id} membership in guild: ${data[0].guild_id} updated.`, JSON.stringify(data[0], null, 2))
+    return data
   } else {
-    logger.warn("No supabase error reported but no data returned.")
+    throw new SupabaseNullDataException()
   }
 }
 
-async function upsertGuilds(guilds) {
-  logger.debug(`Attempting to upsert guilds to database.`)
-  for (let i = 0; i < guilds.length; i++) {
-    const guild = guilds[i];
-    logger.debug(`Upserting ${guildInfoFormat(guild)}`)
-    const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
-    if (error) {
-      logger.error(`Error upserting ${guildInfoFormat(guild)} to database. \n Supabase error: ${error.message}`)
-    } else if (data.length > 0) {
-      logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
-    } else {
-      logger.warn("No supabase error reported but no data returned.")
-    }
-  }
-}
-
-async function upsertGuild(guild) {
-  logger.debug(`Upserting ${guildInfoFormat(guild)} to database.`)
-  const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
-    if (error) {
-      logger.error(`Error upserting ${guildInfoFormat(guild)} to database. \n Supabase error: ${error.message}`)
-    } else if (data.length > 0) {
-      logger.debug(`${data[0].name} (id: ${data[0].id}) upserted to database.`)
-    } else {
-      logger.warn("No supabase error reported but no data returned.")
-    }
-}
-
-async function getMember(user_id, guild_id) {
-  logger.debug(`Searching for user with id ${user_id} in guild ${guild_id} in database.`)
-  const { data, error } = await supabase.from('Members').select("*").match({user_id: user_id, guild_id: guild_id}).maybeSingle()
-  if (error) {
-    logger.error(`Failed to find user with id ${user_id} in guild ${guild_id} in database. \n Supabase error: ${error.message}`)
-  }
-  logger.debug(`Retrieved member match from db, data: ${JSON.stringify(data, null, 2)}`)
-  return data
-}
-
-async function reset(guild_id) {
-  logger.info(`Resetting database for guild with id ${guild_id}.`)
-  const {data, error} = await supabase.from('Members').update({xp: 0, messages: 0, characters: 0, level: 0, monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
-  if (error) {
-    logger.error(`Failed to reset database for guild with id ${guild.id} \n Supabase error: ${error.message}`)
-  } else {
-    logger.info(`Successfully reset database.`)
-  }
-  return
-}
-
-async function reset_monthly(guild_id) {
-  logger.info(`Resetting monthly database for guild`)
-  const {data, error} = await supabase.from('Members').update({monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
-  if (error) {
-    logger.error(`Failed to reset database for guild with id ${guild.id} \n Supabase error: ${error.message}`)
-  }
-  return
-}
+// LEADERBOARD MANAGEMENT
 
 async function getLeaderboard(guild_id) {
   logger.debug(`Leaderboard requested for guild id: ${guild_id}`)
   const { data, error } = await supabase.from('Members').select("*").order('xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
-    logger.error(`Failed to retrieve leaderboard data for guild id: ${guild_id} \n Supabase Error: ${error.message}`)
-  } else if (data.length == 0) {
-    logger.warn(`Supabase leaderboard query for guild id: ${guild_id} returned no data. (This may not be an error if there are no members registered with this guild yet.)`)
-    return null
-  } else {
+    throw new SupabaseNullDataException(error)
+  } else if (data.length > 0) {
     return data
+  } else {
+    throw new SupabaseNullDataException()
   }
 }
 
@@ -148,14 +160,32 @@ async function getMonthlyLeaderboard(guild_id) {
   logger.debug(`Leaderboard requested for guild id: ${guild_id}`)
   const { data, error } = await supabase.from('Members').select("*").order('monthly_xp', {ascending: false}).match({guild_id: guild_id});
   if (error) {
-    logger.error(`Failed to retrieve leaderboard data for guild id: ${guild_id} \n Supabase Error: ${error.message}`)
-  } else if (data.length == 0) {
-    logger.warn(`Supabase leaderboard query for guild id: ${guild_id} returned no data. (This may not be an error if there are no members registered with this guild yet.)`)
-    return null
-  } else {
+    throw new SupabaseException(error)
+  } else if (data.length > 0) {
     return data
+  } else {
+    throw new SupabaseNullDataException()
   }
 }
+
+async function reset(guild_id) {
+  logger.info(`Resetting database for guild with id ${guild_id}.`)
+  const {data, error} = await supabase.from('Members').update({xp: 0, messages: 0, characters: 0, level: 0, monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
+  if (error) {
+    throw new SupabaseException(error)
+  }
+  return true
+}
+
+async function reset_monthly(guild_id) {
+  logger.info(`Resetting monthly database for guild`)
+  const {data, error} = await supabase.from('Members').update({monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
+  if (error) {
+    throw new SupabaseException(error)
+  }
+  return true
+}
+
 
 module.exports = {
   updateMember: updateMember,
