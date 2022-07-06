@@ -9,10 +9,17 @@ module.exports = {
     .setDescription('Get Server Leaderboard for this month.'),
   async execute(interaction) {
     const guild = interaction.guild
-    const data = await db.getMonthlyLeaderboard(guild.id)
-    const responses = await leaderboardEmbeds(data, guild, "monthly")
-    await interaction.reply({
-      embeds: responses
-    })
+    try {
+      const data = await db.getMonthlyLeaderboard(guild.id)
+      const responses = await leaderboardEmbeds(data, guild, "monthly")
+      await interaction.reply({
+        embeds: responses
+      })
+    } catch (e) {
+      logger.error(e.message)
+      await interaction.reply(
+        "Couldn't get leaderboard data, please try again later."
+      )
+    }
   }
 }

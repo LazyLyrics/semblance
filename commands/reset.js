@@ -12,9 +12,16 @@ module.exports = {
     if (isAdmin(interaction.member)) {
       logger.debug(`${userInfoFormat(interaction.member)} in guild ${guildInfoFormat(interaction.guild)} has ADMINISTRATOR permissions, continuing with leaderboard reset.`)
       await interaction.reply("Authorised: You have Administrator Permissions.")
-      await reset(interaction.guildId)
-      logger.debug(`Leaderboard for ${guildInfoFormat(interaction.guild)} has been reset.`)
-      await interaction.followUp('Leaderboard Cleared.')
+      try {
+        await reset(interaction.guildId)
+        logger.debug(`Leaderboard for ${guildInfoFormat(interaction.guild)} has been reset.`)
+        await interaction.followUp('Leaderboard Cleared.')
+      } catch (e) {
+        logger.error(e)
+        await interaction.reply(
+          "There was an error resetting the database, please try again later."
+        )
+      }
     } else {
       logger.debug(`${userInfoFormat(interaction.member)} in guild ${guildInfoFormat(interaction.guild)} does not have ADMINISTRATOR permissions, aborting leaderboard reset.`)
       await interaction.reply("You do not have administrator permissions.")

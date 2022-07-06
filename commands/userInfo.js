@@ -10,12 +10,19 @@ module.exports = {
   async execute(interaction) {
     const discord_user = interaction.user
     const guild = interaction.guild
-    const member = await getMember(discord_user.id, guild.id)
-    const response = await memberInfoEmbed(discord_user, member)
-    await interaction.reply({
-      embeds: [
-        response
-      ]
-    })
+    try {
+      const member = await getMember(discord_user.id, guild.id)
+      const response = await memberInfoEmbed(discord_user, member)
+      await interaction.reply({
+        embeds: [
+          response
+        ]
+      })
+    } catch (e) {
+      logger.error(e.message)
+      await interaction.reply(
+        "Could not find user in database."
+      )
+    }
   }
 }

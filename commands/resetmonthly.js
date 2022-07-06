@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders')
-const { reset_monthly } = require('../utils/db')
+const { resetMonthly } = require('../utils/db')
 const { isAdmin } = require('../utils/permissions')
 const logger = require('../utils/logging')
 const { guildInfoFormat, userInfoFormat } = require('../utils/misc')
@@ -12,7 +12,7 @@ module.exports = {
     if (isAdmin(interaction.member)) {
       logger.debug(`${userInfoFormat(interaction.member)} in guild ${guildInfoFormat(interaction.guild)} has ADMINISTRATOR permissions, continuing with monthly leaderboard reset.`)
       await interaction.reply("Authorised: You have Administrator Permissions.")
-      await reset_monthly(interaction.guildId)
+      await resetMonthly(interaction.guildId)
       logger.debug(`Monthly leaderboard for ${guildInfoFormat(interaction.guild)} has been reset.`)
       await interaction.followUp('Monthly leaderboard Cleared.')
     } else {

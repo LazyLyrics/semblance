@@ -3,7 +3,7 @@ const path = require("node:path")
 const discord = require('discord.js')
 require('dotenv').config()
 const logger = require("./utils/logging")
-const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, supabase } = require("./utils/db")
+const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, getMember, supabase } = require("./utils/db")
 const { guildInfoFormat, userInfoFormat } = require("./utils/misc")
 
 const ENV = process.env
@@ -15,8 +15,12 @@ client.once("ready", async function() {
   // Get list of guilds
   const guilds = Array.from((await client.guilds.fetch()).values())
   // Upsert each to supabase
-  await upsertGuilds(guilds)
-  logger.info("Completed guild membership check.")
+  try {
+    await upsertGuilds(guilds)
+    logger.info("Completed guild membership check.")
+  } catch (e) {
+    logger.error(e.message)
+  }
   logger.info(`Logged in as ${client.user.tag}.`)
   logger.info(`Ready!`)
 })
@@ -24,7 +28,11 @@ client.once("ready", async function() {
 // ----------------------------- EVENTS -----------------------//
 client.on("guildCreate", async guild => {
   logger.info(`New guild joined ${guildInfoFormat(guild)}. Adding to database.`)
-  await upsertGuild(guild)
+  try {
+    await upsertGuild(guild)
+  } catch (e) {
+    logger.error(e)
+  }
 })
 
 
@@ -42,7 +50,11 @@ client.on("messageCreate", async function(msg) {
   // upsert user to db
   const user = msg.author
   const guild_id = msg.guildId
-  await upsertUser(user)
+  try {
+    await upsertUser(user)
+  } catch (e) {
+    logger.error(e.message)
+  }
 
   // Look for member entry
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user.id, guild_id: guild_id})
@@ -51,10 +63,18 @@ client.on("messageCreate", async function(msg) {
   } else if (data.length > 0) {
     // Update member
     logger.debug(`User ${userInfoFormat(user)} present in Member table, updating.`)
-    await updateMember(msg, data[0].id, data[0])
+    try {
+      await updateMember(msg, data[0].id, data[0])
+    } catch (e) {
+      logger.error(e.message)
+    }
   } else if (data.length === 0) {
     logger.debug(`User ${userInfoFormat(user)} not present in Member table, inserting.`)
-    await insertMember(msg, guild_id)
+    try {
+      await insertMember(msg, guild_id)
+    } catch (e) {
+      logger.error(e.message)
+    }
   }
 
   // Log processing time

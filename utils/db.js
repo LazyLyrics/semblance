@@ -12,18 +12,13 @@ class SupabaseException {
   constructor(error) {
     this.error = error.message
     this.prefix = 'Supabase reported an error: '
-    this.toString = function () {
-      return this.prefix + this.error
-    }
+    this.message = this.prefix + " " + this.error
   }
 }
 
 class SupabaseNullDataException {
   constructor() {
-    this.message = 'No supabase error reported but no data returned.'
-    this.toString = () => {
-      return this.message
-    }
+    this.message = 'No supabase error reported but no data returned. This may not be an error.'
   }
 }
 
@@ -81,10 +76,10 @@ async function getMember(user_id, guild_id) {
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user_id, guild_id: guild_id}).maybeSingle()
   if (error) {
     throw new SupabaseException(error)
-  } else if (data.length > 0) {
-      return data
-  } else {
+  } else if (typeof data === 'undefined') {
     throw new SupabaseNullDataException()
+  } else {
+    return data
   }
 }
 
@@ -177,7 +172,7 @@ async function reset(guild_id) {
   return true
 }
 
-async function reset_monthly(guild_id) {
+async function resetMonthly(guild_id) {
   logger.info(`Resetting monthly database for guild`)
   const {data, error} = await supabase.from('Members').update({monthly_xp: 0, monthly_messages: 0, monthly_characters: 0}).match({guild_id: guild_id})
   if (error) {
@@ -188,15 +183,20 @@ async function reset_monthly(guild_id) {
 
 
 module.exports = {
-  updateMember: updateMember,
+  // SUPABASE CLIENT
+  supabase: supabase,
+  // USERS
   upsertUser: upsertUser,
-  insertMember: insertMember,
-  upsertGuilds: upsertGuilds,
+  // GUILDS
   upsertGuild: upsertGuild,
+  upsertGuilds: upsertGuilds,
+  // MEMBERS
   getMember: getMember,
-  reset: reset,
-  reset_monthly: reset_monthly,
+  insertMember: insertMember,
+  updateMember: updateMember,
+  // LEADERBOARD
   getLeaderboard: getLeaderboard,
   getMonthlyLeaderboard: getMonthlyLeaderboard,
-  supabase: supabase,
+  reset: reset,
+  resetMonthly: resetMonthly,
 }
