@@ -57,29 +57,32 @@ client.on("messageCreate", async function(msg) {
   }
 
   // Look for member entry
-  const { data, error } = await supabase.from('Members').select("*").match({user_id: user.id, guild_id: guild_id})
-  if (error) {
-    logger.error(`Supabase error in member search: ${error.message}`)
-  } else if (data.length > 0) {
-    // Update member
-    logger.debug(`User ${userInfoFormat(user)} present in Member table, updating.`)
-    try {
-      await updateMember(msg, data[0].id, data[0])
-    } catch (e) {
-      logger.error(e.message)
+  try {
+    const member = await getMember(user.id, guild_id)
+    if (member) {
+      // Update member
+      logger.debug(`User ${userInfoFormat(user)} present in Member table, updating.`)
+      try {
+        await updateMember(msg, member.id, member)
+      } catch (e) {
+        logger.error(e.message)
+      }
+    } else {
+      logger.debug(`User ${userInfoFormat(user)} not present in Member table, inserting.`)
+      try {
+        await insertMember(msg, guild_id)
+      } catch (e) {
+        logger.error(e.message)
+      }
     }
-  } else if (data.length === 0) {
-    logger.debug(`User ${userInfoFormat(user)} not present in Member table, inserting.`)
-    try {
-      await insertMember(msg, guild_id)
-    } catch (e) {
-      logger.error(e.message)
-    }
+  } catch (e) {
+    logger.error(e.message)
+  } finally {
+    // Log processing time
+    const duration = performance.now() - start
+    logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
   }
 
-  // Log processing time
-  const duration = performance.now() - start
-  logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
 })
 
 // Commands

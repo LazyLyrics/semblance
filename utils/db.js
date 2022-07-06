@@ -26,6 +26,12 @@ class SupabaseNullDataException {
 const supabase = supabasejs.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SECRET)
 
 // USER MANAGEMENT
+async function getUser(user_id) {
+  const { data, error } = await supabase.from('Users').select("name, avatar_url").match({id: user_id}).single()
+  if ( error ) throw new SupabaseException(error)
+  return data
+}
+
 async function upsertUser(user) {
   logger.debug(`Attempting to upsert user ${userInfoFormat(user)}`)
   const { data, error } = await supabase.from('Users').upsert({id: user.id, name: user.username, avatar_url: user.avatarURL()})
@@ -39,6 +45,7 @@ async function upsertUser(user) {
 }
 
 // GUILD MANAGEMENT
+
 
 async function upsertGuilds(guilds) {
   logger.debug(`Attempting to upsert guilds to database.`)
@@ -59,16 +66,36 @@ async function upsertGuilds(guilds) {
 async function upsertGuild(guild) {
   logger.debug(`Upserting ${guildInfoFormat(guild)} to database.`)
   const { data, error } = await supabase.from('Guilds').upsert({id: guild.id, name: guild.name});
-    if (error) {
-      throw new SupabaseException(error)
-    } else if (data.length > 0) {
-      return data[0]
-    } else {
-      throw new SupabaseNullDataException()
-    }
+  if (error) {
+    throw new SupabaseException(error)
+  } else if (data.length > 0) {
+    return data[0]
+  } else {
+    throw new SupabaseNullDataException()
+  }
 }
 
+async function getRoleSpecs(guild_id) {
+  const { data, error } = await supabase.from('Guilds').select('role_specs').match({id: guild_id}).maybeSingle()
+  if (error) {
+    throw new SupabaseException(error)
+  } else {
+    return data.role_specs
+  }
+}
 
+async function updateRoleSpecs(guild_id, role_specs) {
+  const { data: update_data, error: update_error } = await supabase
+    .from('Guilds')
+    .update({
+      role_specs: role_specs
+    })
+    .match({id: guild_id})
+  if (update_error) {
+    throw new SupabaseException(error)
+  }
+  return update_data
+}
 // MEMBER MANAGEMENT
 
 async function getMember(user_id, guild_id) {
@@ -76,8 +103,6 @@ async function getMember(user_id, guild_id) {
   const { data, error } = await supabase.from('Members').select("*").match({user_id: user_id, guild_id: guild_id}).maybeSingle()
   if (error) {
     throw new SupabaseException(error)
-  } else if (typeof data === 'undefined') {
-    throw new SupabaseNullDataException()
   } else {
     return data
   }
@@ -147,7 +172,7 @@ async function getLeaderboard(guild_id) {
   } else if (data.length > 0) {
     return data
   } else {
-    throw new SupabaseNullDataException()
+    return null
   }
 }
 
@@ -186,10 +211,13 @@ module.exports = {
   // SUPABASE CLIENT
   supabase: supabase,
   // USERS
+  getUser: getUser,
   upsertUser: upsertUser,
   // GUILDS
   upsertGuild: upsertGuild,
   upsertGuilds: upsertGuilds,
+  getRoleSpecs: getRoleSpecs,
+  updateRoleSpecs: updateRoleSpecs,
   // MEMBERS
   getMember: getMember,
   insertMember: insertMember,

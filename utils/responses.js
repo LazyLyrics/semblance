@@ -1,6 +1,6 @@
 const { MessageEmbed } = require('discord.js');
 const { getCompliment } = require('./misc.js')
-const { supabase } = require('./db');
+const { getUser } = require('./db');
 const logger = require('./logging.js');
 
 async function memberInfoEmbed(discord_user, member) {
@@ -42,6 +42,7 @@ async function guildInfoEmbed(guild) {
 
 async function leaderboardEmbeds(leaderboard, guild, type) {
   let embeds = [];
+  let user;
 
   for (let i = 0; i < leaderboard.length; i++) {
     let member = leaderboard[i]
@@ -55,11 +56,15 @@ async function leaderboardEmbeds(leaderboard, guild, type) {
       xp = `${member.xp}xp`
       messages = `${member.messages} messages`
     }
-    const { data, error } = await supabase.from('Users').select("name, avatar_url").match({id: member.user_id}).single()
+    try {
+      user = await getUser(member.user_id)
+    } catch (e) {
+      logger.error(e.message)
+    }
     const embed = new MessageEmbed()
     .setColor('BLUE')
-    .addField(`${String(i + 1)}. ${String(data.name)}`, `${xp} | ${messages}`)
-    .setThumbnail(data.avatar_url)
+    .addField(`${String(i + 1)}. ${String(user.name)}`, `${xp} | ${messages}`)
+    .setThumbnail(user.avatar_url)
     embeds.push(
       embed
     )
