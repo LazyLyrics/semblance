@@ -96,6 +96,28 @@ async function updateRoleSpecs(guild_id, role_specs) {
   }
   return update_data
 }
+
+function insertRole(role_specs, id, level) {
+  if (level in role_specs) {
+    role_specs[level].push(id)
+  } else {
+    role_specs[level] = [id]
+  }
+  return role_specs
+}
+
+function removeRole(role_specs, id, level) {
+  if (level in role_specs) {
+    const roles = role_specs[level]
+    for (let i = roles.length - 1; i >= 0; i--) {
+      if (roles[i] == id) {
+        roles.splice(i, 1)
+      }
+    }
+  }
+  return role_specs
+}
+
 // MEMBER MANAGEMENT
 
 async function getMember(user_id, guild_id) {
@@ -152,11 +174,12 @@ async function updateMember(msg, member_id, pdata) {
     }
   )
   .match({id: member_id})
+  let ndata = data[0]
 
   if (error) {
     throw new SupabaseException()
   } else if (data.length > 0) {
-    return data
+    return {ndata, pdata}
   } else {
     throw new SupabaseNullDataException()
   }
@@ -218,6 +241,8 @@ module.exports = {
   upsertGuilds: upsertGuilds,
   getRoleSpecs: getRoleSpecs,
   updateRoleSpecs: updateRoleSpecs,
+  insertRole: insertRole,
+  removeRole, removeRole,
   // MEMBERS
   getMember: getMember,
   insertMember: insertMember,

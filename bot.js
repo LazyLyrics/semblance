@@ -3,7 +3,7 @@ const path = require("node:path")
 const discord = require('discord.js')
 require('dotenv').config()
 const logger = require("./utils/logging")
-const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, getMember, supabase } = require("./utils/db")
+const { updateMember, upsertUser, insertMember, upsertGuilds, upsertGuild, getMember, getRoleSpecs } = require("./utils/db")
 const { guildInfoFormat, userInfoFormat } = require("./utils/misc")
 
 const ENV = process.env
@@ -50,6 +50,7 @@ client.on("messageCreate", async function(msg) {
   // upsert user to db
   const user = msg.author
   const guild_id = msg.guildId
+  let updatedMemberInfo;
   try {
     await upsertUser(user)
   } catch (e) {
@@ -63,7 +64,8 @@ client.on("messageCreate", async function(msg) {
       // Update member
       logger.debug(`User ${userInfoFormat(user)} present in Member table, updating.`)
       try {
-        await updateMember(msg, member.id, member)
+        updatedMemberInfo = await updateMember(msg, member.id, member)
+        logger.debug(JSON.stringify(updatedMemberInfo))
       } catch (e) {
         logger.error(e.message)
       }
@@ -77,12 +79,36 @@ client.on("messageCreate", async function(msg) {
     }
   } catch (e) {
     logger.error(e.message)
-  } finally {
-    // Log processing time
-    const duration = performance.now() - start
-    logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
   }
 
+  // Check roles
+  const guildMember = msg.member
+  const previousLevel = updatedMemberInfo.pdata.level
+  const newLevel = updatedMemberInfo.ndata.level
+  logger.debug(previousLevel)
+  logger.debug(newLevel)
+
+  if (previousLevel !== newLevel)
+  try {
+    logger.debug("Level changed.")
+    const roleSpecs = await getRoleSpecs(guild_id)
+    for ([key, value] of Object.entries(roleSpecs)) {
+      if (parseInt(key) <= newLevel) {
+        logger.debug("Reached Level " + key)
+        for (role_id of value) {
+          logger.debug(`Level ${key}: ${role_id}`)
+          guildMember.roles.add(role_id)
+        }
+      }
+    }
+  } catch (e) {
+    logger.error(e.message)
+  }
+
+
+  // Log processing time
+  const duration = performance.now() - start
+  logger.debug(`Message processing completed in ${duration}ms (${duration / 1000}s)`)
 })
 
 // Commands

@@ -1,13 +1,13 @@
 function msgXP(length) {
-  return 5 + Math.floor(Math.sqrt(2 * length))
+  return 1
 }
 
 function xpForLevel(level) {
-  return Math.floor(Math.pow(level, 3))
+  return level
 }
 
 function getLevel(xp) {
-  return Math.floor(Math.cbrt(xp))
+  return xp
 }
 
 module.exports = {

@@ -72,8 +72,28 @@ async function leaderboardEmbeds(leaderboard, guild, type) {
   return embeds
 }
 
+async function roleRewardsEmbed(roleSpecs, guild) {
+  const embed = new MessageEmbed()
+  .setColor('BLUE')
+  .setTitle('Role Rewards.')
+  for (let [key, value] of Object.entries(roleSpecs)) {
+    key = parseInt(key)
+    let fieldContents = ''
+    for (id of value) {
+      let role = await guild.roles.fetch(id)
+      fieldContents = fieldContents + role.name + '\n'
+    }
+    embed.addField(
+      `Level ${key}`,
+      fieldContents
+    )
+  }
+  return embed
+}
+
 module.exports = {
   memberInfoEmbed: memberInfoEmbed,
   guildInfoEmbed: guildInfoEmbed,
-  leaderboardEmbeds: leaderboardEmbeds
+  leaderboardEmbeds: leaderboardEmbeds,
+  roleRewardsEmbed: roleRewardsEmbed
 }
