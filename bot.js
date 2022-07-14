@@ -88,21 +88,30 @@ client.on("messageCreate", async function(msg) {
   logger.debug(previousLevel)
   logger.debug(newLevel)
 
-  if (previousLevel !== newLevel)
-  try {
-    logger.debug("Level changed.")
-    const roleSpecs = await getRoleSpecs(guild_id)
-    for ([key, value] of Object.entries(roleSpecs)) {
-      if (parseInt(key) <= newLevel) {
-        logger.debug("Reached Level " + key)
-        for (role_id of value) {
-          logger.debug(`Level ${key}: ${role_id}`)
-          guildMember.roles.add(role_id)
+  if (previousLevel !== newLevel) {
+    let newRoles = []
+    try {
+      logger.debug("Level changed.")
+      const roleSpecs = await getRoleSpecs(guild_id)
+      for ([key, value] of Object.entries(roleSpecs)) {
+        if (parseInt(key) <= newLevel) {
+          logger.debug("Reached Level " + key)
+          for (role_id of value) {
+            logger.debug(`Level ${key}: ${role_id}`)
+            guildMember.roles.add(role_id)
+            const roleObject = await msg.guild.roles.fetch(role_id)
+            newRoles.push(roleObject)
+          }
         }
       }
+      if (newRoles.length != 0) {
+        await msg.reply(`You levelled up! Now you're level ${newLevel}! You also earned **${newRoles.length}** new roles!`)
+      } else {
+        await msg.reply(`You levelled up! Now you're level ${newLevel}!`)
+      }
+    } catch (e) {
+      logger.error(e.message)
     }
-  } catch (e) {
-    logger.error(e.message)
   }
 
 
